@@ -1,4 +1,4 @@
-import { and, asc, count, eq, isNull, gt } from "drizzle-orm";
+import { and, asc, count, eq, isNull, gt, sql } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { invites, memberships, users, type Role } from "@/db/schema";
 import { getPlan } from "../billing/plans";
@@ -101,7 +101,7 @@ export async function assertMemberCapacity(ctx: OrgContext): Promise<void> {
   const [{ pending }] = await db
     .select({ pending: count() })
     .from(invites)
-    .where(and(eq(invites.organizationId, ctx.org.id), isNull(invites.acceptedAt), gt(invites.expiresAt, new Date())));
+    .where(and(eq(invites.organizationId, ctx.org.id), isNull(invites.acceptedAt), gt(invites.expiresAt, sql`now()`)));
   if (members + pending >= limit) {
     throw new AppError("plan_limit", `The ${getPlan(ctx.org.plan).name} plan allows ${limit} members. Upgrade to add more.`);
   }
