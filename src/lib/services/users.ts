@@ -60,7 +60,7 @@ export async function getUserBySessionToken(token: string): Promise<PublicUser |
     .select({ id: users.id, email: users.email, name: users.name })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
-    .where(and(eq(sessions.tokenHash, hashToken(token)), gt(sessions.expiresAt, new Date())));
+    .where(and(eq(sessions.tokenHash, hashToken(token)), gt(sessions.expiresAt, sql`now()`)));
   return row ?? null;
 }
 

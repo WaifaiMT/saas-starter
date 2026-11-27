@@ -59,7 +59,7 @@ export async function listPendingInvites(ctx: OrgContext) {
   return getDb()
     .select({ id: invites.id, email: invites.email, role: invites.role, expiresAt: invites.expiresAt, createdAt: invites.createdAt })
     .from(invites)
-    .where(and(eq(invites.organizationId, ctx.org.id), isNull(invites.acceptedAt), gt(invites.expiresAt, new Date())))
+    .where(and(eq(invites.organizationId, ctx.org.id), isNull(invites.acceptedAt), gt(invites.expiresAt, sql`now()`)))
     .orderBy(desc(invites.createdAt));
 }
 
@@ -82,7 +82,7 @@ export async function getInvite(token: string) {
     .select({ email: invites.email, role: invites.role, orgName: organizations.name, orgSlug: organizations.slug })
     .from(invites)
     .innerJoin(organizations, eq(organizations.id, invites.organizationId))
-    .where(and(eq(invites.tokenHash, hashToken(token)), isNull(invites.acceptedAt), gt(invites.expiresAt, new Date())));
+    .where(and(eq(invites.tokenHash, hashToken(token)), isNull(invites.acceptedAt), gt(invites.expiresAt, sql`now()`)));
   return row ?? null;
 }
 
@@ -95,7 +95,7 @@ export async function acceptInvite(token: string, user: { id: string; email: str
     const [invite] = await tx
       .select()
       .from(invites)
-      .where(and(eq(invites.tokenHash, hashToken(token)), isNull(invites.acceptedAt), gt(invites.expiresAt, new Date())))
+      .where(and(eq(invites.tokenHash, hashToken(token)), isNull(invites.acceptedAt), gt(invites.expiresAt, sql`now()`)))
       .for("update");
     if (!invite) throw new AppError("not_found", "This invite link is invalid, expired, or already used.");
     if (invite.email !== user.email.toLowerCase()) {
